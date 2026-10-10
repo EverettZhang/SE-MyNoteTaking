@@ -157,6 +157,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
             margin-bottom: 20px;
         }
 
@@ -168,6 +170,7 @@
         .editor-actions {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -188,6 +191,24 @@
         .btn-save:hover {
             background: #218838;
             transform: translateY(-1px);
+        }
+
+        .btn-translate {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-translate:hover {
+            background: #556bd1;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .translation-result {
+            min-height: 140px;
         }
 
         .btn-delete {
@@ -345,6 +366,7 @@
                     <h2 class="editor-title" id="editorTitle">Select a note to edit</h2>
                     <div class="editor-actions" id="editorActions" style="display: none;">
                         <button class="btn btn-save" id="saveBtn">💾 Save</button>
+                        <button class="btn btn-translate" id="translateBtn">Translate</button>
                         <button class="btn btn-delete" id="deleteBtn">🗑️ Delete</button>
                     </div>
                 </div>
@@ -360,6 +382,10 @@
                     <div class="form-group">
                         <label class="form-label" for="noteContent">Content</label>
                         <textarea class="form-textarea" id="noteContent" placeholder="Start writing your note..."></textarea>
+                    </div>
+                    <div class="form-group" id="translationPanel" hidden>
+                        <label class="form-label" for="translationResult">Traditional Chinese translation</label>
+                        <textarea class="form-textarea translation-result" id="translationResult" readonly></textarea>
                     </div>
                 </div>
 
@@ -377,6 +403,7 @@
                 this.notes = [];
                 this.currentNote = null;
                 this.isLoading = false;
+                this.translationRequest = 0;
                 this.init();
             }
 
@@ -388,6 +415,7 @@
             bindEvents() {
                 document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
+                document.getElementById('translateBtn').addEventListener('click', () => this.translateNote());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
                 document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
                 
@@ -403,7 +431,10 @@
                 };
                 
                 document.getElementById('noteTitle').addEventListener('input', autoSave);
-                document.getElementById('noteContent').addEventListener('input', autoSave);
+                document.getElementById('noteContent').addEventListener('input', () => {
+                    this.clearTranslation();
+                    autoSave();
+                });
             }
 
             async loadNotes() {
@@ -446,6 +477,7 @@
                 const note = this.notes.find(n => n.id === noteId);
                 if (!note) return;
 
+                this.clearTranslation();
                 this.currentNote = note;
                 this.showEditor();
                 this.renderNotesList(); // Re-render to update active state
@@ -456,6 +488,7 @@
             }
 
             createNewNote() {
+                this.clearTranslation();
                 this.currentNote = {
                     id: null,
                     title: '',
@@ -485,11 +518,58 @@
             }
 
             hideEditor() {
+                this.clearTranslation();
                 document.getElementById('emptyState').style.display = 'block';
                 document.getElementById('editorForm').style.display = 'none';
                 document.getElementById('editorActions').style.display = 'none';
                 document.getElementById('editorTitle').textContent = 'Select a note to edit';
                 this.currentNote = null;
+            }
+
+            clearTranslation() {
+                this.translationRequest++;
+                document.getElementById('translationPanel').hidden = true;
+                document.getElementById('translationResult').value = '';
+                if (document.getElementById('translateBtn').disabled) {
+                    this.hideMessage();
+                }
+                document.getElementById('translateBtn').disabled = false;
+            }
+
+            async translateNote() {
+                if (!this.currentNote) return;
+                const text = document.getElementById('noteContent').value;
+                if (!text.trim()) {
+                    this.showMessage('Enter note content to translate.', 'error');
+                    return;
+                }
+
+                this.clearTranslation();
+                const requestId = this.translationRequest;
+                document.getElementById('translateBtn').disabled = true;
+                this.showMessage('Translating...', 'loading');
+
+                try {
+                    const response = await fetch('/api/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text })
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || 'Translation failed.');
+                    if (requestId !== this.translationRequest) return;
+                    document.getElementById('translationResult').value = result.translation;
+                    document.getElementById('translationPanel').hidden = false;
+                    this.hideMessage();
+                } catch (error) {
+                    if (requestId === this.translationRequest) {
+                        this.showMessage(`Translation failed: ${error.message}`, 'error');
+                    }
+                } finally {
+                    if (requestId === this.translationRequest) {
+                        document.getElementById('translateBtn').disabled = false;
+                    }
+                }
             }
 
             async saveNote(isAutoSave = false) {

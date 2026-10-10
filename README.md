@@ -153,6 +153,22 @@ The application is configured for easy deployment with:
 
 ## 🔧 Configuration
 
+### Traditional Chinese translator
+
+Install the dependencies, put `OPENROUTER_API_KEY` in the repository-root `.env`,
+then run:
+
+```bash
+python translator.py "Hello, how are you?"
+```
+
+The translator prints JSON such as `{"translation":"你好"}` to standard output.
+The instructions it sends to OpenRouter live in `prompts/translate_prompt.md`.
+In the note editor, click **Translate** to translate the current content. The
+Traditional Chinese result appears below the content without changing or saving
+the note. The web app also exposes `POST /api/translate` with a JSON body like
+`{"text":"Hello"}` and returns a JSON `translation` field.
+
 ### Environment Variables
 - `FLASK_ENV`: Set to `development` for debug mode
 - `SECRET_KEY`: Flask secret key for sessions
