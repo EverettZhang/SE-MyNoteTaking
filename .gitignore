@@ -110,3 +110,9 @@ Thumbs.db
 .coverage
 coverage.xml
 *.prof
+
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
