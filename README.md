@@ -15,7 +15,7 @@ A modern, responsive web application for managing personal notes with a beautifu
 
 ## 🚀 Live Demo
 
-The application is deployed and accessible at: **https://3dhkilc88dkk.manus.space**
+The application is deployed and accessible at: 
 
 ## 🛠 Technology Stack
 
