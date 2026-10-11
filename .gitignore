@@ -73,9 +73,6 @@ venv.bak/
 # Jupyter
 .ipynb_checkpoints
 
-# pyenv
-.python-version
-
 # pipenv
 Pipfile.lock
 
@@ -118,3 +115,4 @@ coverage.xml
 !.env.example
 .neon
 node_modules/
+.vercel/

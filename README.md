@@ -43,10 +43,11 @@ notetaking-app/
 │   ├── routes/
 │   │   ├── user.py          # User API routes (template)
 │   │   └── note.py          # Note API endpoints
-│   ├── static/
-│   │   ├── index.html       # Frontend application
-│   │   └── favicon.ico      # Application icon
 │   └── main.py              # Flask application entry point
+├── public/
+│   ├── index.html           # Frontend application
+│   └── favicon.ico          # Application icon
+├── app.py                   # Vercel Flask entry point
 ├── venv/                    # Python virtual environment
 ├── requirements.txt         # Python dependencies
 └── README.md               # This file
@@ -141,20 +142,24 @@ The `note` table retains `id`, `title`, `content`, `created_at`, and `updated_at
 The SQLAlchemy models also define a separate `user` table. `init-db` creates
 missing tables without importing rows from the old SQLite file.
 
-## 🚀 Deployment
+## 🚀 Vercel deployment preparation
 
-The application is configured for easy deployment with:
-- CORS enabled for cross-origin requests
-- Host binding to `0.0.0.0` for external access
-- Production-ready Flask configuration
-- Persistent Neon PostgreSQL database
+Vercel loads the Flask `app` from root `app.py` using Python 3.12, as pinned in
+`.python-version`. It serves `public/` assets through its CDN. The translation
+prompt at `prompts/translate_prompt.md` is included in the Python function.
+Application startup does not create database tables or write to the filesystem.
+The existing Neon tables must already exist before deployment.
+
+Configure `DATABASE_URL` and `OPENROUTER_API_KEY` as Vercel environment
+variables. Do not upload the local `.env`; `.vercelignore` excludes it from CLI
+deployments. This checkpoint has not been deployed to Vercel.
 
 ## 🔧 Configuration
 
 ### Traditional Chinese translator
 
-Install the dependencies, put `OPENROUTER_API_KEY` in the repository-root `.env`,
-then run:
+Install the dependencies and provide `OPENROUTER_API_KEY` through the process
+environment or the repository-root `.env`, then run:
 
 ```bash
 python translator.py "Hello, how are you?"
@@ -168,8 +173,9 @@ the note. The web app also exposes `POST /api/translate` with a JSON body like
 `{"text":"Hello"}` and returns a JSON `translation` field.
 
 ### Environment Variables
-- `FLASK_ENV`: Set to `development` for debug mode
-- `SECRET_KEY`: Flask secret key for sessions
+- `DATABASE_URL`: Required Neon PostgreSQL connection string.
+- `OPENROUTER_API_KEY`: Required to use translation.
+- `SECRET_KEY`: Optional Flask session key; the current routes do not use sessions.
 
 ### Database Configuration
 - `DATABASE_URL` is required. Local `.env` values do not override an existing

@@ -14,10 +14,11 @@ from src.routes.translate import translate_bp
 from src.models.note import Note
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+PUBLIC_DIR = os.path.join(ROOT_DIR, 'public')
 load_dotenv(os.path.join(ROOT_DIR, '.env'))
 
-app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
-app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
+app = Flask(__name__, static_folder=None)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
 # Enable CORS for all routes
 CORS(app)
@@ -48,16 +49,12 @@ def init_db():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    static_folder_path = app.static_folder
-    if static_folder_path is None:
-            return "Static folder not configured", 404
-
-    if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
-        return send_from_directory(static_folder_path, path)
+    if path != "" and os.path.isfile(os.path.join(PUBLIC_DIR, path)):
+        return send_from_directory(PUBLIC_DIR, path)
     else:
-        index_path = os.path.join(static_folder_path, 'index.html')
+        index_path = os.path.join(PUBLIC_DIR, 'index.html')
         if os.path.exists(index_path):
-            return send_from_directory(static_folder_path, 'index.html')
+            return send_from_directory(PUBLIC_DIR, 'index.html')
         else:
             return "index.html not found", 404
 

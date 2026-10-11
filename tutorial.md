@@ -1,6 +1,6 @@
 # How the NoteTaker web app works
 
-NoteTaker is a small, single-page application for creating, finding, editing, and deleting notes. The browser runs the interface in `src/static/index.html`. A Flask server provides the note API, and SQLAlchemy stores notes in Neon PostgreSQL. The editor's Translate button uses `translator.py` to produce a separate Traditional Chinese result.
+NoteTaker is a small, single-page application for creating, finding, editing, and deleting notes. The browser runs the interface in `public/index.html`. A Flask server provides the note API, and SQLAlchemy stores notes in Neon PostgreSQL. The editor's Translate button uses `translator.py` to produce a separate Traditional Chinese result.
 
 ## 1. Run it locally
 
@@ -23,7 +23,8 @@ Set `DATABASE_URL` in the repository-root `.env` before running `init-db`. In a 
 | File | Responsibility |
 | --- | --- |
 | `src/main.py` | Creates the Flask app, registers API routes, configures the database, provides `init-db`, and serves the frontend. |
-| `src/static/index.html` | Contains the page, styling, and the JavaScript `NoteTaker` class that handles user actions. |
+| `public/index.html` | Contains the page, styling, and the JavaScript `NoteTaker` class that handles user actions. |
+| `app.py` | Exposes the same Flask app at Vercel's recognized entry point. |
 | `src/routes/note.py` | Defines the HTTP endpoints for notes. |
 | `src/models/note.py` | Defines the `Note` database table and its JSON representation. |
 | `src/models/user.py` | Provides the shared SQLAlchemy `db` object and a separate `User` model. |
@@ -42,7 +43,7 @@ Browser action
   → updated browser interface
 ```
 
-`src/main.py` registers the note and user blueprints under `/api`. It also serves `index.html` at `/` and serves files such as the favicon from `src/static`.
+`src/main.py` registers the note and user blueprints under `/api`. For local development, it serves `index.html` at `/` and the favicon from `public/`. Vercel serves the same public assets through its CDN.
 
 ## 3. Load and display notes
 

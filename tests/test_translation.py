@@ -1,5 +1,6 @@
 import json
 import io
+import os
 import unittest
 from contextlib import redirect_stdout
 from unittest.mock import Mock, patch
@@ -18,6 +19,7 @@ class TranslationTests(unittest.TestCase):
 
     @patch("translator.requests.post")
     @patch("translator.dotenv_values", return_value={"OPENROUTER_API_KEY": "test-key"})
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""})
     def test_valid_model_json(self, _dotenv, post):
         response = Mock()
         response.json.return_value = {
@@ -32,6 +34,7 @@ class TranslationTests(unittest.TestCase):
 
     @patch("translator.requests.post")
     @patch("translator.dotenv_values", return_value={"OPENROUTER_API_KEY": "test-key"})
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": ""})
     def test_invalid_model_json_is_rejected(self, _dotenv, post):
         response = Mock()
         response.json.return_value = {"choices": [{"message": {"content": "plain text"}}]}
@@ -39,6 +42,19 @@ class TranslationTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "invalid translation JSON"):
             llm_generate("Hello")
+
+    @patch("translator.requests.post")
+    @patch("translator.dotenv_values", side_effect=AssertionError(".env should not be read"))
+    @patch.dict(os.environ, {"OPENROUTER_API_KEY": "process-key"})
+    def test_process_environment_key_needs_no_dotenv(self, _dotenv, post):
+        response = Mock()
+        response.json.return_value = {
+            "choices": [{"message": {"content": '{"translation":"你好"}'}}]
+        }
+        post.return_value = response
+
+        self.assertEqual(llm_generate("Hello"), "你好")
+        self.assertEqual(post.call_args.kwargs["headers"]["Authorization"], "Bearer process-key")
 
     @patch("src.routes.translate.llm_generate", return_value="你好")
     def test_endpoint_returns_json(self, generate):
