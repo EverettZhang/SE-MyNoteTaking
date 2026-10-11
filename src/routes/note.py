@@ -21,9 +21,9 @@ def create_note():
         db.session.add(note)
         db.session.commit()
         return jsonify(note.to_dict()), 201
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Unable to create note'}), 500
 
 @note_bp.route('/notes/<int:note_id>', methods=['GET'])
 def get_note(note_id):
@@ -34,8 +34,8 @@ def get_note(note_id):
 @note_bp.route('/notes/<int:note_id>', methods=['PUT'])
 def update_note(note_id):
     """Update a specific note"""
+    note = Note.query.get_or_404(note_id)
     try:
-        note = Note.query.get_or_404(note_id)
         data = request.json
         
         if not data:
@@ -45,21 +45,21 @@ def update_note(note_id):
         note.content = data.get('content', note.content)
         db.session.commit()
         return jsonify(note.to_dict())
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Unable to update note'}), 500
 
 @note_bp.route('/notes/<int:note_id>', methods=['DELETE'])
 def delete_note(note_id):
     """Delete a specific note"""
+    note = Note.query.get_or_404(note_id)
     try:
-        note = Note.query.get_or_404(note_id)
         db.session.delete(note)
         db.session.commit()
         return '', 204
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Unable to delete note'}), 500
 
 @note_bp.route('/notes/search', methods=['GET'])
 def search_notes():
@@ -69,7 +69,7 @@ def search_notes():
         return jsonify([])
     
     notes = Note.query.filter(
-        (Note.title.contains(query)) | (Note.content.contains(query))
+        (Note.title.icontains(query)) | (Note.content.icontains(query))
     ).order_by(Note.updated_at.desc()).all()
     
     return jsonify([note.to_dict() for note in notes])

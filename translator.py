@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -20,9 +21,9 @@ def llm_generate(text: str) -> str:
     if not isinstance(text, str) or not text.strip():
         raise ValueError("Text to translate must not be empty.")
 
-    api_key = dotenv_values(ROOT_DIR / ".env").get("OPENROUTER_API_KEY")
+    api_key = os.environ.get("OPENROUTER_API_KEY") or dotenv_values(ROOT_DIR / ".env").get("OPENROUTER_API_KEY")
     if not api_key:
-        raise ValueError("OPENROUTER_API_KEY is missing from .env.")
+        raise ValueError("OPENROUTER_API_KEY is not configured.")
 
     system_prompt = PROMPT_PATH.read_text(encoding="utf-8")
     response = requests.post(
