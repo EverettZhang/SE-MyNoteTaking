@@ -15,9 +15,24 @@ class VercelCompatibilityTests(unittest.TestCase):
         page = self.client.get('/')
         try:
             self.assertEqual(page.status_code, 200)
-            self.assertIn(b'/api/notes', page.data)
+            self.assertIn(b'/styles.css', page.data)
+            self.assertIn(b'/app.js', page.data)
         finally:
             page.close()
+
+        script = self.client.get('/app.js')
+        try:
+            self.assertEqual(script.status_code, 200)
+            self.assertIn(b'/api/notes', script.data)
+        finally:
+            script.close()
+
+        stylesheet = self.client.get('/styles.css')
+        try:
+            self.assertEqual(stylesheet.status_code, 200)
+            self.assertIn(b'.note-editor', stylesheet.data)
+        finally:
+            stylesheet.close()
 
         favicon = self.client.get('/favicon.ico')
         try:
