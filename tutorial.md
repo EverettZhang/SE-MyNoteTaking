@@ -1,6 +1,6 @@
 # How the NoteTaker web app works
 
-NoteTaker is a small, single-page application for creating, finding, editing, and deleting notes. The browser runs the interface in `src/static/index.html`. A Flask server provides the note API, and SQLAlchemy stores notes in a SQLite database. The editor's Translate button uses `translator.py` to produce a separate Traditional Chinese result.
+NoteTaker is a small, single-page application for creating, finding, editing, and deleting notes. The browser runs the interface in `src/static/index.html`. A Flask server provides the note API, and SQLAlchemy stores notes in Neon PostgreSQL. The editor's Translate button uses `translator.py` to produce a separate Traditional Chinese result.
 
 ## 1. Run it locally
 
@@ -10,18 +10,19 @@ From the repository root, create a virtual environment and install the Python de
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+flask --app src.main init-db
 python src/main.py
 ```
 
 On macOS or Linux, activate the environment with `source .venv/bin/activate` instead. Then open <http://localhost:5001/>. The server listens on port 5001 and runs with Flask debug mode enabled when started this way, so this command is intended for local development.
 
-On startup, `src/main.py` creates the `database` directory if necessary, configures SQLite at `database/app.db` **in the repository root**, and calls `db.create_all()` to create missing tables. The database file appears when the app first uses it. Notes remain there across server restarts.
+Set `DATABASE_URL` in the repository-root `.env` before running `init-db`. In a deployed environment, provide `DATABASE_URL` as an environment variable. The one-time `init-db` command creates missing tables in Neon, using `DATABASE_URL_UNPOOLED` for schema creation when available; application startup does not run schema changes. Existing SQLite rows are not copied.
 
 ## 2. Follow the parts of the app
 
 | File | Responsibility |
 | --- | --- |
-| `src/main.py` | Creates the Flask app, registers API routes, initializes the database, and serves the frontend. |
+| `src/main.py` | Creates the Flask app, registers API routes, configures the database, provides `init-db`, and serves the frontend. |
 | `src/static/index.html` | Contains the page, styling, and the JavaScript `NoteTaker` class that handles user actions. |
 | `src/routes/note.py` | Defines the HTTP endpoints for notes. |
 | `src/models/note.py` | Defines the `Note` database table and its JSON representation. |
@@ -36,7 +37,7 @@ Browser action
   → fetch('/api/notes...')
   → Flask route in src/routes/note.py
   → Note model and SQLAlchemy session
-  → SQLite database/app.db
+  → Neon PostgreSQL
   → JSON response
   → updated browser interface
 ```
@@ -53,7 +54,7 @@ Clicking a sidebar item calls `selectNote(id)`. The editor then shows that note'
 
 ## 4. Create, edit, and auto-save a note
 
-Click **New Note** to open a blank editor. This creates a browser-side note with no ID; it is not in SQLite yet. Enter a title or content and click **Save**. `saveNote()` sends a JSON `POST /api/notes` request. If the title is blank, the browser uses `Untitled`. The server requires both `title` and `content` fields, inserts a `Note`, commits the transaction, and responds with the saved note and HTTP `201`. The browser adds that response to its list and keeps its new ID as the current note.
+Click **New Note** to open a blank editor. This creates a browser-side note with no ID; it is not in PostgreSQL yet. Enter a title or content and click **Save**. `saveNote()` sends a JSON `POST /api/notes` request. If the title is blank, the browser uses `Untitled`. The server requires both `title` and `content` fields, inserts a `Note`, commits the transaction, and responds with the saved note and HTTP `201`. The browser adds that response to its list and keeps its new ID as the current note.
 
 For an existing note, **Save** sends `PUT /api/notes/<id>` with the current title and content. The server changes the supplied fields and commits. SQLAlchemy updates `updated_at` when the row changes. The response replaces the corresponding note in the browser's array.
 
@@ -98,7 +99,7 @@ To see the pieces together, create a note in the browser:
 1. **New Note** opens a blank editor without sending a request.
 2. **Save** calls `saveNote()`, which sends `POST /api/notes`.
 3. `create_note()` builds a `Note` and commits it through the shared `db` session.
-4. SQLite stores the row in `database/app.db`.
+4. Neon PostgreSQL stores the row.
 5. The route returns the new note as JSON. The browser records its ID and redraws the sidebar.
 
 Later edits use the same route-to-model-to-database path with `PUT` instead of `POST`.

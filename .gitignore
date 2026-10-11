@@ -116,3 +116,5 @@ coverage.xml
 .env
 .env.*
 !.env.example
+.neon
+node_modules/

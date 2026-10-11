@@ -30,7 +30,7 @@ The application is deployed and accessible at:
 - **Flask-CORS**: Cross-origin resource sharing support
 
 ### Database
-- **SQLite**: Lightweight, file-based database for data persistence
+- **Neon PostgreSQL**: Hosted database accessed through Flask-SQLAlchemy
 
 ## 📁 Project Structure
 
@@ -46,8 +46,6 @@ notetaking-app/
 │   ├── static/
 │   │   ├── index.html       # Frontend application
 │   │   └── favicon.ico      # Application icon
-│   ├── database/
-│   │   └── app.db           # SQLite database file
 │   └── main.py              # Flask application entry point
 ├── venv/                    # Python virtual environment
 ├── requirements.txt         # Python dependencies
@@ -79,12 +77,19 @@ notetaking-app/
    pip install -r requirements.txt
    ```
 
-4. **Run the application**
+4. **Configure and initialize the database**
+   Set `DATABASE_URL` in the repository-root `.env` for local use, or supply it
+   as an environment variable. Run this once for a new database:
+   ```bash
+   flask --app src.main init-db
+   ```
+
+5. **Run the application**
    ```bash
    python src/main.py
    ```
 
-5. **Access the application**
+6. **Access the application**
    - Open your browser and go to `http://localhost:5001`
 
 ## 📡 API Endpoints
@@ -132,16 +137,9 @@ notetaking-app/
 
 ## 🔒 Database Schema
 
-### Notes Table
-```sql
-CREATE TABLE note (
-    id INTEGER PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
+The `note` table retains `id`, `title`, `content`, `created_at`, and `updated_at`.
+The SQLAlchemy models also define a separate `user` table. `init-db` creates
+missing tables without importing rows from the old SQLite file.
 
 ## 🚀 Deployment
 
@@ -149,7 +147,7 @@ The application is configured for easy deployment with:
 - CORS enabled for cross-origin requests
 - Host binding to `0.0.0.0` for external access
 - Production-ready Flask configuration
-- Persistent SQLite database
+- Persistent Neon PostgreSQL database
 
 ## 🔧 Configuration
 
@@ -174,9 +172,11 @@ the note. The web app also exposes `POST /api/translate` with a JSON body like
 - `SECRET_KEY`: Flask secret key for sessions
 
 ### Database Configuration
-- Database file: `src/database/app.db`
-- Automatic table creation on first run
-- SQLAlchemy ORM for database operations
+- `DATABASE_URL` is required. Local `.env` values do not override an existing
+  environment variable.
+- Run `flask --app src.main init-db` once to create missing tables.
+- `init-db` uses `DATABASE_URL_UNPOOLED` when available for schema creation.
+- SQLAlchemy manages database sessions and checks pooled connections before use.
 
 ## 📱 Browser Compatibility
 
@@ -220,5 +220,5 @@ Potential improvements for future versions:
 
 ---
 
-**Built with ❤️ using Flask, SQLite, and modern web technologies**
+**Built with ❤️ using Flask, PostgreSQL, and modern web technologies**
 
