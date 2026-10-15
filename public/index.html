@@ -18,12 +18,16 @@
         <main class="workspace">
             <aside class="sidebar" aria-label="Your notes">
                 <div class="sidebar-heading">
-                    <h1>Notes</h1>
+                    <h1 id="sidebarTitle">Notes</h1>
                     <button class="button button-primary" id="newNoteBtn" type="button">New note</button>
                 </div>
 
-                <label class="sr-only" for="searchBox">Search notes</label>
-                <input type="search" class="search-box" id="searchBox" placeholder="Search notes" autocomplete="off">
+                <button class="sidebar-view-toggle" id="deletedNotesToggle" type="button" aria-pressed="false">Deleted notes</button>
+
+                <div id="searchContainer">
+                    <label class="sr-only" for="searchBox">Search notes</label>
+                    <input type="search" class="search-box" id="searchBox" placeholder="Search notes" autocomplete="off">
+                </div>
 
                 <nav class="notes-list" id="notesList" aria-label="Notes">
                     <p class="list-message">Loading notes…</p>
@@ -65,5 +69,27 @@
             </section>
         </main>
     </div>
+
+    <dialog class="confirm-dialog" id="confirmDialog" tabindex="-1"
+            aria-labelledby="confirmDialogTitle" aria-describedby="confirmDialogDescription">
+        <div class="confirm-dialog-content">
+            <span class="confirm-dialog-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="M12 7.5v5.5"></path>
+                    <path d="M12 16.5h.01"></path>
+                </svg>
+            </span>
+            <h2 id="confirmDialogTitle"></h2>
+            <p id="confirmDialogDescription"></p>
+            <p class="confirm-dialog-error" id="confirmDialogError" role="alert" hidden></p>
+            <div class="confirm-dialog-actions">
+                <button class="button button-secondary" id="confirmCancelBtn" type="button">Cancel</button>
+                <button class="button button-danger-soft" id="confirmActionBtn" type="button"></button>
+            </div>
+        </div>
+    </dialog>
+    <div class="toast-region" id="toastRegion" role="status" aria-live="polite" aria-atomic="true"></div>
 </body>
 </html>

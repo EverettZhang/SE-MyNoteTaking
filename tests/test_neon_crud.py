@@ -51,6 +51,14 @@ class NeonCrudTests(unittest.TestCase):
             deleted = client.delete(f'/api/notes/{note_id}')
             self.assertEqual(deleted.status_code, 204)
             self.assertEqual(client.get(f'/api/notes/{note_id}').status_code, 404)
+            self.assertFalse(any(note['id'] == note_id for note in client.get('/api/notes').json))
+
+            restored = client.post(f'/api/notes/{note_id}/restore')
+            self.assertEqual(restored.status_code, 200)
+            self.assertEqual(restored.json['id'], note_id)
+            self.assertEqual(restored.json['created_at'], created.json['created_at'])
+            self.assertEqual(restored.json['updated_at'], updated.json['updated_at'])
+            self.assertEqual(client.get(f'/api/notes/{note_id}').status_code, 200)
         finally:
             with app.app_context():
                 # Clean up only the uniquely marked row if an assertion failed.

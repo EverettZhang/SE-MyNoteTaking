@@ -79,8 +79,11 @@ notetaking-app/
    ```
 
 4. **Configure and initialize the database**
-   Set `DATABASE_URL` in the repository-root `.env` for local use, or supply it
-   as an environment variable. Run this once for a new database:
+   Set `DATABASE_URL` in the repository-root `.env` for local use (and
+   `OPENROUTER_API_KEY` if translation is needed). `.env` is ignored by Git;
+   do not commit credentials.
+
+   Run this once for a new database:
    ```bash
    flask --app src.main init-db
    ```
@@ -100,8 +103,11 @@ notetaking-app/
 - `POST /api/notes` - Create a new note
 - `GET /api/notes/<id>` - Get a specific note
 - `PUT /api/notes/<id>` - Update a note
-- `DELETE /api/notes/<id>` - Delete a note
-- `GET /api/notes/search?q=<query>` - Search notes
+- `DELETE /api/notes/<id>` - Hide a note while preserving it for restoration (204)
+- `POST /api/notes/<id>/restore` - Restore the original note (200)
+- `GET /api/notes/deleted/status` - Check whether another deletion may evict an older deleted note
+- `POST /api/notes/deleted/refresh` - Clean expired overflow and list retained deleted notes
+- `GET /api/notes/search?q=<query>` - Search visible notes
 
 ### Request/Response Format
 ```json
@@ -126,7 +132,8 @@ notetaking-app/
 - **Title Input**: Edit note titles
 - **Content Textarea**: Rich text editing area
 - **Save Button**: Manual save option (auto-save also available)
-- **Delete Button**: Remove notes with confirmation
+- **Delete Button**: Remove notes with confirmation and a six-second Undo toast
+- **Deleted Notes**: Restore retained deleted notes from the sidebar without leaving the current editor
 - **Real-time Updates**: Changes reflected immediately
 
 ### Design Elements
@@ -139,8 +146,29 @@ notetaking-app/
 ## 🔒 Database Schema
 
 The `note` table retains `id`, `title`, `content`, `created_at`, and `updated_at`.
+Its nullable `deleted_at` column marks notes hidden from normal lists, search,
+individual reads, and edits. Restoring clears that marker without changing the
+note ID or original timestamps. The database retains the 10 most recently
+deleted notes, plus any extra notes still within 60 seconds of deletion.
+Expired overflow is permanently removed on the next deletion or opening of
+Deleted notes. The six-second Undo toast is local to the deleting browser tab;
+failed restoration offers another 10 seconds to retry, up to the 60-second
+limit. The sidebar provides a small restore-only view, without manual permanent
+deletion. The current schema has no attachment or other note-dependent records.
 The SQLAlchemy models also define a separate `user` table. `init-db` creates
 missing tables without importing rows from the old SQLite file.
+
+For an existing database, run the additive migration once before starting the
+updated application (or deploying it):
+
+```powershell
+.\.venv\Scripts\python.exe migrations\0001_add_note_deleted_at.py
+```
+
+It reads `DATABASE_URL_UNPOOLED` from the process environment or `.env`, adds
+`deleted_at` to `public.note` if absent, and leaves existing notes visible.
+`init-db` only creates missing tables and does not alter an existing `note`
+table. Check which database/branch the direct URL targets before running it.
 
 ## 🚀 Vercel deployment preparation
 
@@ -174,6 +202,7 @@ the note. The web app also exposes `POST /api/translate` with a JSON body like
 
 ### Environment Variables
 - `DATABASE_URL`: Required Neon PostgreSQL connection string.
+- `DATABASE_URL_UNPOOLED`: Direct connection used by the schema migration.
 - `OPENROUTER_API_KEY`: Required to use translation.
 - `SECRET_KEY`: Optional Flask session key; the current routes do not use sessions.
 
@@ -194,11 +223,7 @@ the note. The web app also exposes `POST /api/translate` with a JSON body like
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+请参阅 [Git 工作流程](GIT_WORKFLOW.md)：从 `Dev` 创建工作分支，测试后向 `Dev` 提交 PR；准备发布时再由 `Dev` 向 `main` 提 PR。
 
 ## 📄 License
 
